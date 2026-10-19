@@ -1,5 +1,6 @@
 # 凭据与本地文件：绝对不要提交
 key.txt
+stats.json
 .env
 *.log
 
