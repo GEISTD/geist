@@ -75,13 +75,13 @@ const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://x');
   const p = u.pathname;
 
-  if (req.method === 'GET' && (p === '/' || p === '/index.html')) {
+  if (req.method === 'GET' && (p === '/' || p === '/Geist.html' || p === '/index.html')) {
     try {
-      const html = fs.readFileSync(path.join(DIR, 'index.html'));
+      const html = fs.readFileSync(path.join(DIR, 'Geist.html'));
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(html);
     } catch (e) {
-      sendJson(res, 500, { error: 'index.html 不存在' });
+      sendJson(res, 500, { error: 'Geist.html 不存在' });
     }
     return;
   }
