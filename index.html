@@ -65,6 +65,8 @@ main{flex:1;overflow-y:auto;scroll-behavior:smooth;width:100%}
 .keycard .kc-sub{font-size:12.8px;color:#8a8a90;line-height:1.75;margin-bottom:14px}
 .keycard input{width:100%;border:1px solid #e3e3e6;border-radius:10px;padding:10px 12px;font-size:13.5px;outline:none;color:#222;margin-bottom:14px;transition:border .15s}
 .keycard input:focus{border-color:#111}
+.keycard select{width:100%;border:1px solid #e3e3e6;border-radius:10px;padding:10px 12px;font-size:13.5px;outline:none;color:#222;margin-bottom:14px;background:#fff;transition:border .15s;cursor:pointer}
+.keycard select:focus{border-color:#111}
 .kc-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .kc-actions .ghost{font-size:12.5px;color:#9a9aa0}
 .kc-actions .ghost:hover{color:#111}
@@ -160,11 +162,14 @@ footer{border-top:1px solid #f0f0f0;background:#fff;flex:none}
   <div class="footline">对话只保存在你的浏览器里 · 心理援助热线 12356</div>
 </footer>
 
-<!-- 免费模型接入卡片（弹在对话流里） -->
+<!-- 模型接入卡片（弹在对话流里，适配所有 OpenAI 兼容接口） -->
 <div class="keycard" id="keycard" hidden>
-  <div class="kc-title">想聊得更好？贴一个免费的智谱 key</div>
-  <div class="kc-sub">去 bigmodel.cn 免费注册、创建一个 API key 贴进来（不用充值），中文对话会明显更稳。key 只存在你本地浏览器里；不贴也能聊，会自动用免密钥线路。</div>
-  <input id="kcKey" type="password" placeholder="智谱开放平台的 API key">
+  <div class="kc-title">接一个你常用的模型</div>
+  <div class="kc-sub">支持所有 OpenAI 兼容接口：选个预设就能把地址和模型名填好，也可以直接手填。key 只存在你本地浏览器里；不贴也能聊，会自动用免密钥线路。</div>
+  <select id="kcProvider"></select>
+  <input id="kcBase" type="text" placeholder="接口地址，如 https://api.deepseek.com/v1">
+  <input id="kcModel" type="text" placeholder="模型名，如 deepseek-chat">
+  <input id="kcKey" type="password" placeholder="API Key">
   <div class="kc-actions">
     <button id="kcSkip" class="ghost">不贴了，先用免密钥的</button>
     <button id="kcSave" class="dark">保存并开始</button>
@@ -310,6 +315,26 @@ const PLACEHOLDERS = [
 ];
 
 const DEFAULT_SETTINGS = { base: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-flash', key: '' };
+const PROVIDERS = [
+  { label: '智谱 GLM-4-Flash（免费）',          base: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-flash' },
+  { label: 'DeepSeek',                          base: 'https://api.deepseek.com/v1',        model: 'deepseek-chat' },
+  { label: 'OpenAI ChatGPT',                    base: 'https://api.openai.com/v1',           model: 'gpt-5-mini' },
+  { label: 'Claude（Anthropic 兼容层）',        base: 'https://api.anthropic.com/v1',        model: 'claude-sonnet-4-5' },
+  { label: '通义千问',                          base: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-flash' },
+  { label: '自定义（其他 OpenAI 兼容接口）',    base: '',                                     model: '' }
+];
+
+function initProviderSelect() {
+  const sel = document.getElementById('kcProvider');
+  if (sel.options.length) return;
+  PROVIDERS.forEach((p, i) => {
+    const o = document.createElement('option');
+    o.value = i;
+    o.textContent = p.label;
+    sel.appendChild(o);
+  });
+  sel.selectedIndex = 0;
+}
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 
 /* ---------- 状态 ---------- */
@@ -622,11 +647,16 @@ async function checkProxy() {
   }
 }
 
-/* ---------- 免费模型接入引导 ---------- */
+/* ---------- 模型接入引导 ---------- */
 function maybeShowKeycard() {
   if (settings.key) return;
   if (proxyState && proxyState.healthy && proxyState.keyConfigured) return;
   try { if (localStorage.getItem(KEY_SKIP_KEY) === '1') return; } catch (e) {}
+  initProviderSelect();
+  const sel = document.getElementById('kcProvider');
+  const p = PROVIDERS[sel.selectedIndex] || PROVIDERS[0];
+  document.getElementById('kcBase').value = settings.base || p.base;
+  document.getElementById('kcModel').value = settings.model || p.model;
   keycard.hidden = false;
   scrollBottom();
 }
@@ -681,15 +711,26 @@ document.getElementById('restartBtn').addEventListener('click', () => {
   location.reload();
 });
 
+document.getElementById('kcProvider').addEventListener('change', e => {
+  const p = PROVIDERS[Number(e.target.value)];
+  if (!p) return;
+  document.getElementById('kcBase').value = p.base;
+  document.getElementById('kcModel').value = p.model;
+});
 document.getElementById('kcSave').addEventListener('click', () => {
+  const base = document.getElementById('kcBase').value.trim();
+  const model = document.getElementById('kcModel').value.trim();
   const k = document.getElementById('kcKey').value.trim();
-  if (!k) { sysnote('需要先贴一个 key。'); return; }
+  if (!k) { sysnote('还需要一个 API key。'); return; }
+  if (!base) { sysnote('还需要接口地址。'); return; }
+  if (!model) { sysnote('还需要模型名。'); return; }
+  settings.base = base;
+  settings.model = model;
   settings.key = k;
-  if (!settings.base) settings.base = DEFAULT_SETTINGS.base;
   saveSettings();
   try { localStorage.removeItem(KEY_SKIP_KEY); } catch (e) {}
   keycard.hidden = true;
-  sysnote('你的智谱 key 已就绪。');
+  sysnote('已切换到你的模型。');
   ta.focus();
 });
 document.getElementById('kcSkip').addEventListener('click', () => {
