@@ -1,0 +1,9 @@
+# 凭据与本地文件：绝对不要提交
+key.txt
+.env
+*.log
+
+# 依赖与系统文件
+node_modules/
+.DS_Store
+Thumbs.db
