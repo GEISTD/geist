@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#f8eed0">
 <meta name="description" content="Geist —— 一位愿意先听你说话的心理分析师，一位陪你重新估价一切的哲学家。">
@@ -557,9 +557,38 @@ function setMode(t) {
   if (t !== 'analyst' && t !== 'philosopher') t = 'analyst';
   if (t === mode) return;
   saveState();
+  busy = false;
+  hideTyping();
+  removeChoices();
+  outro.hidden = true;
+  mode = t;
   try { localStorage.setItem(MODE_KEY, t); } catch (e) {}
   try { history.replaceState(null, '', location.pathname + '?mode=' + t); } catch (e) {}
-  location.reload();
+  syncModeUI();
+  const saved = loadState();
+  if (saved && Array.isArray(saved.msgs) && saved.msgs.length && saved.started) {
+    msgs = saved.msgs;
+    notes = saved.notes || '';
+    started = true;
+    overlay.classList.add('out');
+    overlay.hidden = true;
+    ta.disabled = false;
+    leaveBtn.hidden = false;
+    renderAll();
+    scrollBottom();
+  } else {
+    msgs = [];
+    notes = '';
+    started = false;
+    chat.innerHTML = '';
+    overlay.classList.remove('out');
+    overlay.hidden = false;
+    ta.disabled = true;
+    leaveBtn.hidden = true;
+    labelShown = false;
+  }
+  setPlaceholder();
+  saveState();
 }
 document.querySelectorAll('.mode-pill').forEach(b => b.addEventListener('click', ev => {
   ev.stopPropagation();
@@ -777,8 +806,17 @@ async function pollinationsCall(messages) {
   throw lastErr || new Error('all models failed');
 }
 
+let fallbackNote = '';
 async function callModel(messages) {
-  if (settings.key && settings.base) return customCall(messages);
+  fallbackNote = '';
+  if (settings.key && settings.base) {
+    try {
+      return await customCall(messages);
+    } catch (e) {
+      console.error('[geist] 个人接口失败：', e);
+      fallbackNote = '你配置的接口这次没连上，先用备用线路替你回答（可在「偏好」里检查地址和 key）。';
+    }
+  }
   try {
     return await proxyCall(messages);
   } catch (e) { /* 代理不可用或无 key，往下走 */ }
@@ -821,22 +859,29 @@ async function send() {
   msgs.push({ role: 'user', text: v });
   saveState();
   showTyping();
+  const m0 = mode;
   try {
     let raw = await callModel(buildMessages());
+    if (mode !== m0) return;
     let parsed = parseReply(raw);
     if (parsed.visible.replace(/[。……？！。?？!！，,、~～\s]/g, '').length < 6) {
       const who = mode === 'philosopher' ? '对方' : '来访者';
       const retryMsgs = buildMessages().concat([{ role: 'user', content: '（请实打实地回应上面' + who + '的话：先接住他的感受，再决定要不要轻轻问一句；不要只发一句短促的空话。结尾照旧写 <internal>…</internal>）' }]);
       raw = await callModel(retryMsgs);
+      if (mode !== m0) return;
       parsed = parseReply(raw);
     }
     if (parsed.newNotes) notes = parsed.newNotes;
     hideTyping();
     renderAssistant(parsed.visible);
     msgs.push({ role: 'assistant', text: parsed.visible });
+    if (fallbackNote) { const n = fallbackNote; fallbackNote = ''; sysnote(n); }
   } catch (e) {
-    hideTyping();
-    sysnote('没连上模型。检查一下网络，稍后再试。');
+    console.error('[geist] 发送失败：', e);
+    if (mode === m0) {
+      hideTyping();
+      sysnote('没连上模型。' + (e && e.message ? String(e.message).slice(0, 90) : '检查一下网络，稍后再试。'));
+    }
   }
   busy = false;
   sendBtn.disabled = false;
@@ -858,7 +903,7 @@ ta.addEventListener('keydown', e => {
 /* ---------- 本机代理探测 ---------- */
 async function checkProxy() {
   try {
-    const res = await fetchWithTimeout('api/health', {}, 5000);
+    const res = await fetchWithTimeout('api/health', {}, 9000);
     const j = await res.json();
     proxyState = { healthy: true, keyConfigured: !!j.keyConfigured };
   } catch (e) {
