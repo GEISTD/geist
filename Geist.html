@@ -189,7 +189,7 @@ footer{border-top:1px solid var(--line-soft);background:var(--bg);flex:none}
     <h1 class="sp-head only-phil">上帝已死。</h1>
     <div class="sp-quote only-analyst">「亲爱的朋友，所有的理论都是灰色的，唯有生命的金树长青。」</div>
     <div class="sp-qattr only-analyst">—— 歌德《浮士德》</div>
-    <div class="sp-sub only-phil">克莱因蓝。人死后瞳孔的颜色。</div>
+    <div class="sp-sub only-phil">谁的头盖骨长我身上了。</div>
   </div>
   <div class="sp-sig only-analyst" aria-hidden="true">
     <div class="sig">
@@ -239,7 +239,7 @@ footer{border-top:1px solid var(--line-soft);background:var(--bg);flex:none}
   <div class="composer">
     <div class="inwrap">
       <textarea id="input" rows="1" placeholder="说点什么吧。" disabled></textarea>
-      <button id="send" disabled aria-label="发送">
+      <button id="send" aria-label="发送">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
       </button>
     </div>
@@ -814,6 +814,7 @@ async function send() {
   if (!v || busy || !started) return;
   removeChoices();
   busy = true;
+  sendBtn.disabled = true;
   ta.value = '';
   autosize();
   renderUser(v);
@@ -838,6 +839,7 @@ async function send() {
     sysnote('没连上模型。检查一下网络，稍后再试。');
   }
   busy = false;
+  sendBtn.disabled = false;
   saveState();
   setPlaceholder();
   ta.focus();
