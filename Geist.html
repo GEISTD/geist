@@ -539,6 +539,15 @@ let labelShown = false;
 let settings = Object.assign({}, DEFAULT_SETTINGS);
 let proxyState = null;
 
+/* ---------- 腾讯云开发（CloudBase）国内直连线路 ---------- */
+// 部署到 CloudBase 静态托管后，把你控制台里的「环境ID」填进下面这对引号，
+// 再重新上传一次这个文件，页面就会自动改用国内云函数线路（步骤见 README「国内直连版」章节）。
+// 不填不部署时，下面代码完全不生效，页面行为和以前一模一样。
+const CB_ENV_ID = 'geist-0-d6g5tr5x0ec1493bc';
+const onCloudBase = !!CB_ENV_ID && /tcloudbaseapp\.com$/.test(location.hostname);
+const CB_FX_BASE = onCloudBase ? 'https://' + CB_ENV_ID + '.service.tcloudbase.com' : '';
+function apiUrl(path) { return onCloudBase ? CB_FX_BASE + '/' + path : 'api/' + path; }
+
 const STORE_KEY = 'geist.chat.v1';
 const SETTINGS_KEY = 'geist.settings.v1';
 const KEY_SKIP_KEY = 'geist.keySkipped.v1';
@@ -749,7 +758,7 @@ async function customCall(messages) {
 }
 
 async function proxyCall(messages) {
-  const res = await fetchWithTimeout('api/chat', {
+  const res = await fetchWithTimeout(apiUrl('chat'), {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ model: 'glm-4-flash', messages })
@@ -903,7 +912,7 @@ ta.addEventListener('keydown', e => {
 /* ---------- 本机代理探测 ---------- */
 async function checkProxy() {
   try {
-    const res = await fetchWithTimeout('api/health', {}, 9000);
+    const res = await fetchWithTimeout(apiUrl('health'), {}, 9000);
     const j = await res.json();
     proxyState = { healthy: true, keyConfigured: !!j.keyConfigured };
   } catch (e) {

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://static.cloudbase.net/cli/cloudbaserc.schema.json",
+  "version": "2.0",
+  "envId": "geist-0-d6g5tr5x0ec1493bc",
+  "functionRoot": "./cloudbase",
+  "functions": [
+    {
+      "name": "health",
+      "runtime": "Nodejs20.19",
+      "handler": "index.main",
+      "timeout": 10,
+      "memorySize": 256,
+      "installDependency": false
+    },
+    {
+      "name": "chat",
+      "runtime": "Nodejs20.19",
+      "handler": "index.main",
+      "timeout": 60,
+      "memorySize": 256,
+      "installDependency": false
+    }
+  ]
+}
