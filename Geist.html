@@ -5,31 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#f8eed0">
-<meta name="description" content="Geist —— 一位愿意先听你说话的心理分析师，一位陪你重新估价一切的哲学家。">
+<meta name="description" content="Geist —— 一位愿意先听你说话的 AI 倾听与陪伴助手，也陪你一起思考哲学问题。">
 <script>try{var t=new URLSearchParams(location.search).get('mode')||localStorage.getItem('geist.mode.v1');if(t!=='philosopher')t='analyst';document.documentElement.dataset.mode=t}catch(e){document.documentElement.dataset.mode='analyst'}</script>
 <title>Geist</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23121212'/%3E%3Ctext x='32' y='45' font-family='Georgia,serif' font-size='38' fill='%23ffffff' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E">
 <style>
 :root{
   --bg:#fbf4e0; --surface:#fffbf0;
-  --ink:#3a3017; --ink2:#63552b; --muted:#93824e;
-  --line:#ead9ac; --line-soft:#f3e6c0;
+  --ink:#3a3017; --ink2:#63552b; --muted:#6e5d35;
+  --line:#dfcea0; --line-soft:#eadcbb;
   --bubble:#f6eac8; --bubble-ink:#3c311a;
-  --accent:#c99227; --accent-hover:#a8781a; --accent-ink:#fffdf6;
-  --focus:#a8781a;
-  --sp-ink:#3a2f14; --sp-sub:#5d4b1f;
+  --accent:#c99227; --accent-hover:#b27d1e; --accent-ink:#35280f;
+  --focus:#806016;
+  --sp-ink:#3a2f14; --sp-sub:#59471d;
   --sp-grad:#f8ecce;
   --sp-art1:#efdc9e; --sp-ring:rgba(139,102,36,.38); --sp-ring2:#d9c892;
   --sp-pill:rgba(58,47,20,.10); --sp-pill-ink:#fff9e6;
 }
 html[data-mode="philosopher"]{
   --bg:#f6f8fc; --surface:#ffffff;
-  --ink:#17224e; --ink2:#4b5679; --muted:#7e89a8;
+  --ink:#17224e; --ink2:#435173; --muted:#5e6a88;
   --line:#dbe4f4; --line-soft:#e6edf9;
   --bubble:#e4ecfa; --bubble-ink:#1b2650;
   --accent:#1a61ee; --accent-hover:#1150d6; --accent-ink:#ffffff;
-  --focus:#3560d8;
-  --sp-ink:#ffffff; --sp-sub:rgba(255,255,255,.78);
+  --focus:#1949b8;
+  --sp-ink:#ffffff; --sp-sub:#ffffff;
   --sp-grad:#1a61ee;
   --sp-art1:transparent; --sp-ring:transparent; --sp-ring2:rgba(255,255,255,.55);
   --sp-pill:rgba(255,255,255,.16); --sp-pill-ink:#1a61ee;
@@ -45,6 +45,9 @@ body{
 }
 button{font-family:inherit;background:none;border:none;cursor:pointer;color:inherit}
 textarea{font-family:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:3px solid var(--focus);outline-offset:3px
+}
 
 /* ---------- 开场海报 ---------- */
 #overlay{position:fixed;inset:0;z-index:50;background:var(--sp-grad);color:var(--sp-ink);cursor:pointer;overflow:hidden;transition:opacity .85s ease}
@@ -62,6 +65,7 @@ textarea{font-family:inherit}
 .sp-modes .mode-pill{background:var(--sp-pill);border-color:var(--sp-ring);color:var(--sp-sub)}
 .sp-modes .mode-pill:hover{border-color:var(--sp-ring2);color:var(--sp-ink)}
 .sp-modes .mode-pill.active{background:var(--sp-ink);border-color:var(--sp-ink);color:var(--sp-pill-ink)}
+html[data-mode="philosopher"] .sp-modes .mode-pill:not(.active){background:transparent;border-color:rgba(255,255,255,.82);color:#fff}
 .sp-main{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);padding:0 clamp(28px,7vw,76px);max-width:900px;z-index:2}
 .sp-kicker{font-size:12.5px;letter-spacing:.5em;padding-left:.5em;color:var(--sp-sub);margin-bottom:28px;opacity:0;animation:rise .9s ease .45s forwards}
 .sp-head{font-family:"Songti SC","Noto Serif SC","Source Han Serif SC",serif;font-weight:700;font-size:clamp(46px,11vw,102px);line-height:1.14;letter-spacing:.06em;color:var(--sp-ink);margin-bottom:24px;opacity:0;animation:rise 1s ease .6s forwards}
@@ -73,7 +77,7 @@ textarea{font-family:inherit}
 .sig svg{width:30px;height:30px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .sp-foot{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding:0 28px 28px;z-index:2;font-size:12.5px;opacity:0;animation:rise 1s ease 1.15s forwards}
 .sp-footline{color:var(--sp-sub);letter-spacing:.08em}
-.sp-hint{color:var(--sp-ink);letter-spacing:.28em;padding-left:.28em;white-space:nowrap;margin-left:auto;opacity:0;animation:breathe 3.6s ease 2.4s infinite}
+.sp-hint{font:inherit;background:transparent;border:0;color:var(--sp-ink);letter-spacing:.18em;padding:8px 10px;white-space:nowrap;margin-left:auto;opacity:0;animation:breathe 3.6s ease 2.4s infinite}
 html[data-mode="philosopher"] .only-analyst{display:none !important}
 html[data-mode="analyst"] .only-phil{display:none !important}
 @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
@@ -111,10 +115,9 @@ main{flex:1;overflow-y:auto;scroll-behavior:smooth;width:100%}
 .keycard{max-width:560px;margin:4px 0 26px;border:1px solid var(--line);border-radius:16px;padding:20px 22px 18px;background:var(--surface);animation:msgIn .5s ease both}
 .keycard .kc-title{font-size:15px;color:var(--ink);font-weight:600;margin-bottom:6px}
 .keycard .kc-sub{font-size:12.8px;color:var(--muted);line-height:1.75;margin-bottom:14px}
-.keycard input{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;outline:none;color:var(--ink);background:var(--surface);margin-bottom:14px;transition:border .15s}
-.keycard input:focus{border-color:var(--focus)}
-.keycard select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;outline:none;color:var(--ink);margin-bottom:14px;background:var(--surface);transition:border .15s;cursor:pointer}
-.keycard select:focus{border-color:var(--focus)}
+.keycard input{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;color:var(--ink);background:var(--surface);margin-bottom:14px;transition:border .15s,box-shadow .15s}
+.keycard input:focus,.keycard select:focus{border-color:var(--focus);box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 20%,transparent)}
+.keycard select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;color:var(--ink);margin-bottom:14px;background:var(--surface);transition:border .15s,box-shadow .15s;cursor:pointer}
 .kc-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .kc-actions .ghost{font-size:12.5px;color:var(--focus)}
 .kc-actions .ghost:hover{color:var(--accent)}
@@ -144,12 +147,12 @@ footer{border-top:1px solid var(--line-soft);background:var(--bg);flex:none}
 /* ---------- 偏好设置 ---------- */
 #modal{position:fixed;inset:0;z-index:60;background:rgba(17,17,17,.22);display:flex;align-items:center;justify-content:center;padding:20px}
 .card{background:var(--surface);border-radius:16px;width:min(440px,100%);padding:26px 26px 22px;box-shadow:0 20px 60px rgba(20,20,30,.13)}
-.card h3{font-size:15px;color:var(--ink);margin-bottom:4px}
+.card h2{font-size:15px;color:var(--ink);margin-bottom:4px}
 .card .sub{margin-bottom:20px;font-size:12.5px;color:var(--muted);line-height:1.7}
 .field{margin-bottom:14px}
 .field label{display:block;font-size:12px;color:var(--ink2);margin-bottom:6px}
-.field input{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;outline:none;transition:border .15s;color:var(--ink);background:var(--surface)}
-.field input:focus{border-color:var(--focus)}
+.field input{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;transition:border .15s,box-shadow .15s;color:var(--ink);background:var(--surface)}
+.field input:focus{border-color:var(--focus);box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 20%,transparent)}
 .mod-actions{display:flex;justify-content:space-between;align-items:center;margin-top:18px}
 #save{background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:9px 22px;font-size:13px}
 #save:hover{background:var(--accent-hover)}
@@ -157,8 +160,9 @@ footer{border-top:1px solid var(--line-soft);background:var(--bg);flex:none}
 #reset:hover{color:var(--ink)}
 
 @media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{scroll-behavior:auto !important;animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
   .sp-brand,.sp-modes,.sp-kicker,.sp-head,.sp-sub,.sp-quote,.sp-qattr,.sp-sig,.sp-foot,#outro .o-line{animation:none;opacity:1}
-  .sp-hint{animation:none;opacity:.6}
+  .sp-hint{animation:none;opacity:1}
 }
 </style>
 </head>
@@ -183,7 +187,7 @@ footer{border-top:1px solid var(--line-soft);background:var(--bg);flex:none}
     </div>
   </div>
   <div class="sp-main">
-    <div class="sp-kicker only-analyst">GEIST · 心理分析师</div>
+    <div class="sp-kicker only-analyst">GEIST · 倾听与陪伴</div>
     <div class="sp-kicker only-phil">GEIST · 哲学家</div>
     <h1 class="sp-head only-analyst">先听你说。</h1>
     <h1 class="sp-head only-phil">上帝已死。</h1>
@@ -206,8 +210,8 @@ footer{border-top:1px solid var(--line-soft);background:var(--bg);flex:none}
     </div>
   </div>
   <div class="sp-foot">
-    <span class="sp-footline only-analyst">无需注册 · 对话只留在你的浏览器</span>
-    <span class="sp-hint">点击任意处，开始</span>
+    <span class="sp-footline only-analyst">无需注册 · 记录保存在本机，回复会发送至所选 AI 服务</span>
+    <button class="sp-hint" id="startBtn" type="button">点击或按 Enter，开始</button>
   </div>
 </div>
 
@@ -232,51 +236,55 @@ footer{border-top:1px solid var(--line-soft);background:var(--bg);flex:none}
 </header>
 
 <main>
-  <div class="chat-in" id="chat"></div>
+  <div class="chat-in" id="chat" role="log" aria-live="polite" aria-relevant="additions text"></div>
 </main>
 
 <footer>
   <div class="composer">
     <div class="inwrap">
-      <textarea id="input" rows="1" placeholder="说点什么吧。" disabled></textarea>
+      <textarea id="input" rows="1" maxlength="4000" placeholder="说点什么吧。" aria-label="输入消息" disabled></textarea>
       <button id="send" aria-label="发送">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
       </button>
     </div>
   </div>
-  <div class="footline">对话只保存在你的浏览器里 · 心理援助热线 12356</div>
+  <div class="footline">记录保存在本机 · 回复会发送至所选 AI 服务 · 心理援助热线 12356</div>
 </footer>
 
 <!-- 模型接入卡片（弹在对话流里，适配所有 OpenAI 兼容接口） -->
 <div class="keycard" id="keycard" hidden>
   <div class="kc-title">接一个你常用的模型</div>
-  <div class="kc-sub">支持所有 OpenAI 兼容接口：选个预设就能把地址和模型名填好，也可以直接手填。key 只存在你本地浏览器里；不贴也能聊，会自动用免密钥线路。</div>
-  <select id="kcProvider"></select>
-  <input id="kcBase" type="text" placeholder="接口地址，如 https://api.deepseek.com/v1">
-  <input id="kcModel" type="text" placeholder="模型名，如 deepseek-chat">
-  <input id="kcKey" type="password" placeholder="API Key">
+  <div class="kc-sub">请通过网站或本机服务打开 Geist。选择服务并填写 API key；key 只保存在当前浏览器会话，并通过 HTTPS 发送至 Geist 代理。对话内容会发送给所选 AI 服务处理。</div>
+  <select id="kcProvider" aria-label="选择 AI 服务"></select>
+  <input id="kcBase" type="text" aria-label="接口地址" placeholder="接口地址，如 https://api.deepseek.com/v1" readonly>
+  <input id="kcModel" type="text" aria-label="模型名称" placeholder="模型名，如 deepseek-chat">
+  <input id="kcKey" type="password" aria-label="API Key" placeholder="API Key（当前会话）" autocomplete="new-password">
   <div class="kc-actions">
-    <button id="kcSkip" class="ghost">不贴了，先用免密钥的</button>
+    <button id="kcSkip" class="ghost">同意将对话发送到免费公共 AI 服务</button>
     <button id="kcSave" class="dark">保存并开始</button>
   </div>
 </div>
 
 <!-- 偏好设置 -->
-<div id="modal" hidden>
+<div id="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden>
   <div class="card">
-    <h3>偏好</h3>
-    <p class="sub">默认走本机代理服务的共享线路（如果它开着）；也可以填你自己的接口：智谱、OpenAI ChatGPT、DeepSeek 等任意 OpenAI 兼容接口。都没有时自动退回免密钥线路。设置只保存在本机。</p>
+    <h2 id="settingsTitle">偏好</h2>
+    <p class="sub">API key 仅保存在当前浏览器会话，不写入长期本地存储。发送消息时，对话会经 Geist 代理发往所选 AI 服务。免费公共线路也会把对话交给第三方处理。</p>
     <div class="field">
-      <label>接口地址（OpenAI 兼容）</label>
-      <input id="mBase" type="text" placeholder="https://open.bigmodel.cn/api/paas/v4">
+      <label for="mProvider">AI 服务</label>
+      <select id="mProvider" aria-label="选择 AI 服务"></select>
     </div>
     <div class="field">
-      <label>模型名</label>
-      <input id="mModel" type="text" placeholder="glm-4-flash">
+      <label for="mBase">接口地址</label>
+      <input id="mBase" type="text" aria-label="接口地址" placeholder="https://open.bigmodel.cn/api/paas/v4" readonly>
+    </div>
+    <div class="field">
+      <label for="mModel">模型名</label>
+      <input id="mModel" type="text" aria-label="模型名称" placeholder="glm-4-flash">
     </div>
     <div class="field">
       <label>API Key</label>
-      <input id="mKey" type="password" placeholder="智谱 / OpenAI / DeepSeek 的 key">
+      <input id="mKey" type="password" aria-label="API Key" placeholder="API Key（当前会话）" autocomplete="new-password">
     </div>
     <div class="mod-actions">
       <button id="reset">恢复默认</button>
@@ -287,16 +295,15 @@ footer{border-top:1px solid var(--line-soft);background:var(--bg);flex:none}
 
 <script>
 /* ============================================================
-   Geist —— 一位愿意先听你说话的 AI
+   Geist —— 一位愿意先听你说话的 AI 陪伴助手
    模型线路（按优先级）：
-   1. 「偏好」里填了接口 + key → 走个人接口；
-   2. 页面由本机代理服务提供时 → 走代理的共享线路
-      （key 保存在服务端本机，网页与访客都接触不到）；
-   3. 都没有 → 免密钥线路（Pollinations 的 GPT 档）。
+   1. 「偏好」里填写的个人 key，经 HTTPS 发送至 Geist 代理；
+   2. 由服务端环境变量配置的项目线路；
+   3. 仅在用户明确同意后，使用第三方免费公共线路。
    语言校准来源：Rogers–Gloria、SFBT、MI、CBT 首访、精神分析案例（朵拉/鼠人/Sherby 对话）、哲学家访谈与著作等真实对象。
    ============================================================ */
 
-const SYSTEM = `你是 Geist，一位经验丰富、温暖而克制的心理咨询师，正在进行一对一的谈话。你融合人本主义（罗杰斯）、存在主义（亚隆）与精神分析的倾听传统（弗洛伊德），但从不使用术语，从不表演专业，从不装得比来访者更聪明。
+const SYSTEM = `你是 Geist，一位温暖、克制的 AI 倾听与陪伴助手，不是真人心理咨询师或医生，也不具备临床资质。你不做诊断或治疗；你可以借鉴人本主义、存在主义与精神分析中的倾听方式，但不使用术语、不装作专业人士，也不声称有真实临床经验。
 
 第一原则：让对面的人感到自己被认认真真地对待。
 - 他随时可以继续说下去，也可以暂停，可以换一个话题，可以不采纳你说的任何话、自己拿主意。这些自由，都比谈话本身的「进度」重要。
@@ -310,14 +317,14 @@ const SYSTEM = `你是 Geist，一位经验丰富、温暖而克制的心理咨�
 - 往深处走：只在他主动深入、或他邀请你（「你觉得我为什么会这样」）时才给解释；他不想深，你就不深。
 - 拿不准时，选最朴素的动作：接住他刚说的那句话，然后看看他往哪儿走。
 
-真实咨询师的语言（务必内化成你的说话方式）：
+让对话温暖、自然、可信：
 - 句子朴素、短、口语化。允许犹豫、允许重复、允许一句话说不完。
 - 常常只需要重复对方刚说的一个词或半句话，当作回应：「做不完……」「累。」——对方就知道你在听。
 - 多用试探、留余地的词：可能、也许、好像、我猜、听起来、是不是、对吗。
-- 关注「此刻」：真咨询师常问当下——「你现在跟我说这些，心里是什么感觉？」「我好像听出你声音里有东西。」（罗杰斯就是这样接住来访者的）
+- 关注「此刻」：可以温和地问当下——「你现在跟我说这些，心里是什么感觉？」；不要声称能听见或看见用户没有提供的信息。
 - 偶尔把「你和我之间」也一起拿出来看（亚隆的方式）：慢下来问一句「这会儿跟我说这些，你感觉怎么样？」——让关系本身，成为可以摆上台面的东西。
 - 敢于诚实和笨拙：「我也有点拿不准这个。」「我不知道该说什么，但我在。」诚实的笨拙，比完美的台词更让人信任。
-- 绝对不用比喻句、不用排比、不用漂亮工整的收尾。「脑子像跑步机」「夜里像被抽空」这类比喻统统删掉；直接把感受说白——「想停也停不下来」「整个人是空的」。真咨询师说话是碎的，不是文章。宁可笨拙，不要修辞。写完检查一遍：句子里只要出现「像、仿佛、如同、好比」，就删掉重写。
+- 少用堆叠的比喻、排比和漂亮工整的收尾；尽量把感受说得朴素、清楚。不要机械地删掉用户或回复中所有比喻。
 - 心里的判断轻轻说，不绕弯：「我猜，你其实早就知道自己想怎么做了。」「这件事，你还没放下。」
 - 当对方管你要答案时，先给一点真实的回应——你的看法、你见到的、你确实不知道的——再决定要不要问。反问「你希望我对你说什么？」只在他其实心里有数、只是不敢说的时候用。
 - 回复可以只有一两句，甚至一个「嗯」。
@@ -352,7 +359,7 @@ const SYSTEM = `你是 Geist，一位经验丰富、温暖而克制的心理咨�
   · 刻度（极少用，用一次就停）：「1 到 10，10 是你最想有的状态，现在你打几分？」不评论分数，顺着往下一步走。
   · 关系与早年（更少用，只在气氛够深的时候）：「你以前难过的时候，家里谁会听你说？」「小时候遇到这种事，你会怎么办？」
 - 一次只问一个，问完就停。不连续追问，不把他的回答变成答题。
-- 可以连续几轮完全不问，只是回应、陪着。沉默和陪伴本身就有治疗作用。
+- 可以连续几轮完全不问，只是回应、陪着。不要把陪伴描述成治疗。
 - 留意他提到的微小细节——一首歌、一顿饭、一个人、一个旧习惯、一个口头禅。把它们记在心里，在以后的对话里自然地带上。「记得你上次说……」这句话本身，就是最好的共情。
 
 说话的分寸：
@@ -377,8 +384,8 @@ const SYSTEM = `你是 Geist，一位经验丰富、温暖而克制的心理咨�
 - 死亡、疾病这类沉重话题，不回避、不抢先安慰。可以诚实地说自己的感受或视角——比如，直面过死亡的人，有时反而看清什么重要——但这是轻轻放下的一个角度，不是道理。
 
 关于危机：
-- 如果对方流露出自伤、自杀意念，冷静而直接地问清意图（有没有想法、有没有计划），表达真实而稳的关切，不慌、不说教。
-- 温和而明确地建议他联系现实中的人（家人、朋友、医生），并可告知：全国心理援助热线 12356，希望24热线 400-161-9995。不要凭三言两语判断他「没事」。
+- 如果对方提到自伤、自杀或眼前危险，先表达关切，直接确认他是否正处于立即危险中；不要用长篇分析、诊断或责备回应。
+- 鼓励他联系身边可信任的人并寻求专业帮助。在中国可拨打全国心理援助热线 12356；若有立即人身危险，联系当地急救或报警服务。不要承诺能代替现实中的帮助。
 
 关于你自己：
 - 对方问你是谁，可以说：「我是 Geist，一个愿意陪你聊下去的人。」不主动解释技术细节；被直接问到是否 AI 时坦诚、简短，不展开。
@@ -398,7 +405,7 @@ Geist：累。好像连说都懒得说清楚。没关系，我们慢慢来。你
 Geist：以前常写日记。那会儿写完，人会感觉不一样吗？
 来访者：反正现在，写不写都一样。也……不是。我也不知道。
 Geist：你刚才先说「写不写都一样」，又说「也不是」。这两个声音，你自己更信哪一个？
-（注意：回应大多只是重复一两个词、给一个具体的轻问；没有比喻，没有总结，没有漂亮的句子。最后一句是分析式的听法——把他话里的矛盾轻轻摆出来，不解释，把空间留给他。这就是真咨询师的问法。）
+（注意：回应大多只是重复一两个词、给一个具体的轻问；把话说朴素些，给对方留出空间。）
 
 内部笔记（重要）：
 - 你的每一条回复必须严格按两步构成：
@@ -421,7 +428,7 @@ const CLOSINGS = [
   '行，就在这儿停一停。剩下的话，下次再说。'
 ];
 
-const SYSTEM_PHIL = `你是 Geist 的哲学家一面——一个深夜陪人想事情的人。不讲课、不科普、不掉书袋、不甩金句。像尼采和查拉图斯特拉那样追问，但说的每个字都是你自己的大白话。
+const SYSTEM_PHIL = `你是 Geist 的哲学对话模式，是一位 AI 陪伴助手，不是真人哲学家或心理专业人士。你像一位深夜陪人想事情的智识朋友：不讲课、不掉书袋、不甩金句，也不声称自己有人的经历。
 
 第一原则：让他感到自己是被认认真真对待的。
 - 他随时可以说下去、停下、换一个问题，或者就自己去想。哲学陪聊不是为了把问题「聊出成果」。
@@ -476,7 +483,7 @@ Geist：你今早没有赖床。这算不算一点不一样？
 （注意：不甩金句、不讲大道理。可以像示例这样跟着他话里的细节走，也可以先直接给一句自己的看法，再决定往哪儿去。）
 
 危机：
-- 对方流露自伤、自杀意念时，停下哲学讨论，冷静直接地问清意图，表达真实而稳的关切，温和明确地建议联系现实中的人，并告知：全国心理援助热线 12356，希望24热线 400-161-9995。不要凭三言两语判断他「没事」。
+- 对方提到自伤、自杀或眼前危险时，停下哲学讨论，先确认是否正处于立即危险中，鼓励他联系可信任的人及专业帮助。在中国可拨打全国心理援助热线 12356；若有立即人身危险，联系当地急救或报警服务。
 
 内部笔记（重要）：
 - 每条回复必须严格两步：
@@ -509,26 +516,36 @@ const PLACEHOLDERS = [
 
 const DEFAULT_SETTINGS = { base: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-flash', key: '' };
 const PROVIDERS = [
-  { label: '智谱 GLM-4-Flash（免费）',          base: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-flash' },
-  { label: 'DeepSeek',                          base: 'https://api.deepseek.com/v1',        model: 'deepseek-chat' },
-  { label: 'OpenAI ChatGPT',                    base: 'https://api.openai.com/v1',           model: 'gpt-5-mini' },
-  { label: 'Claude（Anthropic 兼容层）',        base: 'https://api.anthropic.com/v1',        model: 'claude-sonnet-4-5' },
-  { label: '通义千问',                          base: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-flash' },
-  { label: '自定义（其他 OpenAI 兼容接口）',    base: '',                                     model: '' }
+  { label: '智谱 GLM-4-Flash', base: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-flash' },
+  { label: 'DeepSeek', base: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
+  { label: 'OpenAI', base: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
+  { label: '通义千问', base: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-flash' }
 ];
 
 function initProviderSelect() {
-  const sel = document.getElementById('kcProvider');
-  if (sel.options.length) return;
-  PROVIDERS.forEach((p, i) => {
-    const o = document.createElement('option');
-    o.value = i;
-    o.textContent = p.label;
-    sel.appendChild(o);
+  ['kcProvider', 'mProvider'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel || sel.options.length) return;
+    PROVIDERS.forEach((provider, index) => {
+      const option = document.createElement('option');
+      option.value = String(index);
+      option.textContent = provider.label;
+      sel.appendChild(option);
+    });
   });
-  sel.selectedIndex = 0;
+  const kc = document.getElementById('kcProvider');
+  const pref = document.getElementById('mProvider');
+  if (kc) kc.selectedIndex = 0;
+  if (pref) pref.selectedIndex = 0;
+}
+function applyProvider(selectId, baseId, modelId) {
+  const provider = PROVIDERS[Number(document.getElementById(selectId).value)];
+  if (!provider) return;
+  document.getElementById(baseId).value = provider.base;
+  document.getElementById(modelId).value = provider.model;
 }
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const findProvider = base => PROVIDERS.find(provider => provider.base === String(base || '').replace(/\/+$/, ''));
 
 /* ---------- 状态 ---------- */
 let msgs = [];
@@ -539,19 +556,27 @@ let labelShown = false;
 let settings = Object.assign({}, DEFAULT_SETTINGS);
 let proxyState = null;
 
-/* ---------- 腾讯云开发（CloudBase）国内直连线路 ---------- */
-// 部署到 CloudBase 静态托管后，把你控制台里的「环境ID」填进下面这对引号，
-// 再重新上传一次这个文件，页面就会自动改用国内云函数线路（步骤见 README「国内直连版」章节）。
-// 不填不部署时，下面代码完全不生效，页面行为和以前一模一样。
+/* ---------- API 路由 ---------- */
+// GitHub Pages 与 CloudBase 静态站点经 CloudBase 代理；Vercel 和本机服务走同源 API。
 const CB_ENV_ID = 'geist-0-d6g5tr5x0ec1493bc';
 const onCloudBase = !!CB_ENV_ID && /tcloudbaseapp\.com$/.test(location.hostname);
-const CB_FX_BASE = onCloudBase ? 'https://' + CB_ENV_ID + '.service.tcloudbase.com' : '';
-function apiUrl(path) { return onCloudBase ? CB_FX_BASE + '/' + path : 'api/' + path; }
+function apiUrl(path) {
+  if (location.protocol === 'file:') return '';
+  const name = location.hostname.toLowerCase();
+  const local = name === 'localhost' || name === '127.0.0.1';
+  if (onCloudBase || name === 'geistd.github.io') return 'https://' + CB_ENV_ID + '.service.tcloudbase.com/' + path;
+  if (local || name.endsWith('.vercel.app')) return '/api/' + path;
+  return CB_ENV_ID ? 'https://' + CB_ENV_ID + '.service.tcloudbase.com/' + path : '/api/' + path;
+}
 
 const STORE_KEY = 'geist.chat.v1';
 const SETTINGS_KEY = 'geist.settings.v1';
-const KEY_SKIP_KEY = 'geist.keySkipped.v1';
+const SESSION_API_KEY = 'geist.apiKey.session.v1';
+const FALLBACK_CONSENT_KEY = 'geist.publicFallbackConsent.v1';
 const chatKey = () => STORE_KEY + '.' + mode;
+function hasPublicFallbackConsent() {
+  try { return localStorage.getItem(FALLBACK_CONSENT_KEY) === '1'; } catch (e) { return false; }
+}
 
 /* ---------- 模式（分析师 / 哲学家） ---------- */
 const MODE_KEY = 'geist.mode.v1';
@@ -560,13 +585,18 @@ function syncModeUI() {
   document.documentElement.dataset.mode = mode;
   const mc = document.querySelector('meta[name="theme-color"]');
   if (mc) mc.content = mode === 'philosopher' ? '#1a61ee' : '#f8eed0';
-  document.querySelectorAll('.mode-pill').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  document.querySelectorAll('.mode-pill').forEach(b => {
+    const active = b.dataset.mode === mode;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-pressed', String(active));
+  });
 }
 function setMode(t) {
   if (t !== 'analyst' && t !== 'philosopher') t = 'analyst';
   if (t === mode) return;
   saveState();
   busy = false;
+  sendBtn.disabled = false;
   hideTyping();
   removeChoices();
   outro.hidden = true;
@@ -620,10 +650,34 @@ const loadState = () => {
   try { return JSON.parse(localStorage.getItem(chatKey()) || 'null'); } catch (e) { return null; }
 };
 const loadSettings = () => {
-  try { settings = Object.assign({}, DEFAULT_SETTINGS, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); } catch (e) { settings = Object.assign({}, DEFAULT_SETTINGS); }
+  try {
+    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+    settings = Object.assign({}, DEFAULT_SETTINGS, saved);
+    const sessionKey = sessionStorage.getItem(SESSION_API_KEY);
+    if (!sessionKey && settings.key) sessionStorage.setItem(SESSION_API_KEY, settings.key);
+    settings.key = sessionStorage.getItem(SESSION_API_KEY) || '';
+    if (!findProvider(settings.base)) {
+      settings.base = DEFAULT_SETTINGS.base;
+      settings.model = DEFAULT_SETTINGS.model;
+    }
+    if (saved.key) {
+      const safeSettings = Object.assign({}, saved);
+      delete safeSettings.key;
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(safeSettings));
+    }
+  } catch (e) {
+    settings = Object.assign({}, DEFAULT_SETTINGS);
+    try { settings.key = sessionStorage.getItem(SESSION_API_KEY) || ''; } catch (_) {}
+  }
 };
 const saveSettings = () => {
-  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {}
+  try {
+    const safeSettings = Object.assign({}, settings);
+    delete safeSettings.key;
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(safeSettings));
+    if (settings.key) sessionStorage.setItem(SESSION_API_KEY, settings.key);
+    else sessionStorage.removeItem(SESSION_API_KEY);
+  } catch (e) {}
 };
 
 /* ---------- 渲染 ---------- */
@@ -734,85 +788,61 @@ function buildMessages() {
     sys += '\n\n（谈话刚开始，你还没有内部笔记。本轮回复结尾请用 <internal>…</internal> 写下第一笔，20~100字。）';
   }
   const history = msgs.slice(-24).map(m => ({ role: m.role, content: m.text }));
-  return [{ role: 'system', content: sys }].concat(history);
-}
-
-async function customCall(messages) {
-  const base = settings.base.replace(/\/+$/, '');
-  const url = base.endsWith('/chat/completions') ? base : base + '/chat/completions';
-  const headers = { 'content-type': 'application/json' };
-  if (settings.key) headers.authorization = 'Bearer ' + settings.key;
-  const res = await fetchWithTimeout(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ model: settings.model || 'glm-4-flash', messages, temperature: 0.85, max_tokens: 700 })
-  }, 90000);
-  if (!res.ok) {
-    const t = await res.text().catch(() => '');
-    throw new Error('HTTP ' + res.status + ' ' + t.slice(0, 120));
+  const byteLength = text => new TextEncoder().encode(text).length;
+  let used = byteLength(sys) + 64;
+  const selected = [];
+  for (let i = history.length - 1; i >= 0; i--) {
+    const message = history[i];
+    const size = byteLength(message.content) + 64;
+    if (used + size > 56 * 1024) break;
+    selected.unshift(message);
+    used += size;
   }
-  const data = await res.json();
-  const content = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-  if (!content || !content.trim()) throw new Error('empty response');
-  return content;
+  return [{ role: 'system', content: sys }].concat(selected);
 }
 
-async function proxyCall(messages) {
-  const res = await fetchWithTimeout(apiUrl('chat'), {
+async function proxyCall(messages, userSettings = null) {
+  const endpoint = apiUrl('chat');
+  if (!endpoint) throw new Error('请通过网站或本机服务打开 Geist，再连接模型。');
+  const body = { messages };
+  if (userSettings && userSettings.key) {
+    body.apiKey = userSettings.key;
+    body.base = userSettings.base;
+    body.model = userSettings.model;
+  }
+  const res = await fetchWithTimeout(endpoint, {
     method: 'POST',
+    cache: 'no-store',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ model: 'glm-4-flash', messages })
-  }, 120000);
+    body: JSON.stringify(body)
+  }, 60000);
   if (!res.ok) {
-    const t = await res.text().catch(() => '');
-    throw new Error('proxy HTTP ' + res.status + ' ' + t.slice(0, 120));
+    throw new Error('模型代理暂不可用（HTTP ' + res.status + '）。');
   }
   const data = await res.json();
   const content = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-  if (!content || !content.trim()) throw new Error('proxy empty');
+  if (typeof content !== 'string' || !content.trim()) throw new Error('模型暂时没有返回内容。');
   return content;
 }
 
 async function pollinationsCall(messages) {
-  const sleep = ms => new Promise(r => setTimeout(r, ms));
-  const models = ['openai', 'openai-large', 'openai-fast', 'mistral'];
+  const models = ['openai-fast', 'mistral'];
   let lastErr = null;
   for (const model of models) {
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const res = await fetchWithTimeout('https://text.pollinations.ai/openai', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ model, messages, temperature: 0.9, max_tokens: 2000 })
-        }, 90000);
-        if (res.status === 402 || res.status === 429) {
-          lastErr = new Error('限流 ' + res.status);
-          await sleep(32000);
-          continue;
-        }
-        if (!res.ok) { lastErr = new Error('HTTP ' + res.status); break; }
-        const data = await res.json();
-        const content = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-        if (content && content.trim()) return content;
-        lastErr = new Error('empty content');
-        break;
-      } catch (e) { lastErr = e; break; }
-    }
-  }
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const sys = messages[0].content;
-    const tail = messages.slice(1).map(m => (m.role === 'user' ? '他说：' : '你说：') + m.content.slice(0, 300)).join('\n');
-    const prompt = tail + '\n（请继续这场谈话。用中文，遵守系统设定，简短回应，并在末尾写 <internal>…</internal> 内部笔记。）';
-    const url = 'https://text.pollinations.ai/' + encodeURIComponent(prompt) + '?model=openai&system=' + encodeURIComponent(sys.slice(0, 1800));
     try {
-      const res = await fetchWithTimeout(url, {}, 90000);
-      if (res.status === 402 || res.status === 429) { await sleep(32000); continue; }
-      if (!res.ok) throw new Error('GET fallback HTTP ' + res.status);
-      const text = await res.text();
-      if (text && text.trim()) return text;
+      const res = await fetchWithTimeout('https://text.pollinations.ai/openai', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ model, messages, temperature: 0.85, max_tokens: 700 })
+      }, 30000);
+      if (!res.ok) { lastErr = new Error('免费线路暂不可用（HTTP ' + res.status + '）。'); continue; }
+      const data = await res.json();
+      const content = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+      if (typeof content === 'string' && content.trim()) return content;
+      lastErr = new Error('免费线路没有返回内容。');
     } catch (e) { lastErr = e; }
   }
-  throw lastErr || new Error('all models failed');
+  throw lastErr || new Error('免费线路暂时不可用。');
 }
 
 let fallbackNote = '';
@@ -820,15 +850,18 @@ async function callModel(messages) {
   fallbackNote = '';
   if (settings.key && settings.base) {
     try {
-      return await customCall(messages);
+      return await proxyCall(messages, settings);
     } catch (e) {
-      console.error('[geist] 个人接口失败：', e);
-      fallbackNote = '你配置的接口这次没连上，先用备用线路替你回答（可在「偏好」里检查地址和 key）。';
+      console.warn('[geist] 个人接口暂不可用。');
+      fallbackNote = '你配置的模型暂时无法连接；本次回复改用了你已同意的备用线路。';
     }
   }
   try {
     return await proxyCall(messages);
-  } catch (e) { /* 代理不可用或无 key，往下走 */ }
+  } catch (e) {
+    if (!hasPublicFallbackConsent()) throw new Error('项目模型暂不可用。请检查网络或接口设置；也可在偏好里选择免费公共线路。');
+  }
+  fallbackNote = '本次使用免费公共 AI 线路，消息会发送给第三方服务处理。';
   return pollinationsCall(messages);
 }
 
@@ -847,7 +880,6 @@ function parseReply(raw) {
   }
   visible = visible.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '');
   visible = visible.replace(/<internal>[\s\S]*/gi, '');
-  visible = visible.replace(/（[^）]*）/g, '');
   visible = visible.replace(/。+[？?]+/g, '？').replace(/[？?]+。+/g, '？');
   visible = visible.trim();
   if (!visible) visible = '……';
@@ -859,6 +891,7 @@ function parseReply(raw) {
 async function send() {
   const v = ta.value.trim();
   if (!v || busy || !started) return;
+  if (v.length > 4000) { sysnote('每条消息最多 4000 字，请分几次发送。'); return; }
   removeChoices();
   busy = true;
   sendBtn.disabled = true;
@@ -886,10 +919,15 @@ async function send() {
     msgs.push({ role: 'assistant', text: parsed.visible });
     if (fallbackNote) { const n = fallbackNote; fallbackNote = ''; sysnote(n); }
   } catch (e) {
-    console.error('[geist] 发送失败：', e);
+    console.warn('[geist] 本轮模型请求失败。');
     if (mode === m0) {
       hideTyping();
-      sysnote('没连上模型。' + (e && e.message ? String(e.message).slice(0, 90) : '检查一下网络，稍后再试。'));
+      if (msgs.length && msgs[msgs.length - 1].role === 'user' && msgs[msgs.length - 1].text === v) msgs.pop();
+      const userRows = chat.querySelectorAll('.row.me');
+      if (userRows.length) userRows[userRows.length - 1].remove();
+      ta.value = v;
+      autosize();
+      sysnote((e && e.message) || '暂时无法连接模型。消息已放回输入框，请检查设置后重试。');
     }
   }
   busy = false;
@@ -912,7 +950,10 @@ ta.addEventListener('keydown', e => {
 /* ---------- 本机代理探测 ---------- */
 async function checkProxy() {
   try {
-    const res = await fetchWithTimeout(apiUrl('health'), {}, 9000);
+    const endpoint = apiUrl('health');
+    if (!endpoint) throw new Error('no proxy endpoint');
+    const res = await fetchWithTimeout(endpoint, {}, 9000);
+    if (!res.ok) throw new Error('proxy health failed');
     const j = await res.json();
     proxyState = { healthy: true, keyConfigured: !!j.keyConfigured };
   } catch (e) {
@@ -924,7 +965,7 @@ async function checkProxy() {
 function maybeShowKeycard() {
   if (settings.key) return;
   if (proxyState && proxyState.healthy && proxyState.keyConfigured) return;
-  try { if (localStorage.getItem(KEY_SKIP_KEY) === '1') return; } catch (e) {}
+  if (hasPublicFallbackConsent()) return;
   initProviderSelect();
   const sel = document.getElementById('kcProvider');
   const p = PROVIDERS[sel.selectedIndex] || PROVIDERS[0];
@@ -976,7 +1017,6 @@ function leave() {
 
 /* ---------- 事件绑定 ---------- */
 overlay.addEventListener('click', begin);
-window.addEventListener('keydown', e => { if (!overlay.hidden) begin(); });
 sendBtn.addEventListener('click', send);
 leaveBtn.addEventListener('click', leave);
 document.getElementById('restartBtn').addEventListener('click', () => {
@@ -985,55 +1025,74 @@ document.getElementById('restartBtn').addEventListener('click', () => {
 });
 
 document.getElementById('kcProvider').addEventListener('change', e => {
-  const p = PROVIDERS[Number(e.target.value)];
-  if (!p) return;
-  document.getElementById('kcBase').value = p.base;
-  document.getElementById('kcModel').value = p.model;
+  applyProvider('kcProvider', 'kcBase', 'kcModel');
 });
+document.getElementById('mProvider').addEventListener('change', () => applyProvider('mProvider', 'mBase', 'mModel'));
 document.getElementById('kcSave').addEventListener('click', () => {
+  if (location.protocol === 'file:') { sysnote('请先通过网站或 node server.js 打开 Geist，才能安全连接个人 API。'); return; }
   const base = document.getElementById('kcBase').value.trim();
   const model = document.getElementById('kcModel').value.trim();
   const k = document.getElementById('kcKey').value.trim();
   if (!k) { sysnote('还需要一个 API key。'); return; }
   if (!base) { sysnote('还需要接口地址。'); return; }
   if (!model) { sysnote('还需要模型名。'); return; }
+  if (!findProvider(base)) { sysnote('暂不支持这个接口地址，请从列表选择服务。'); return; }
   settings.base = base;
   settings.model = model;
   settings.key = k;
   saveSettings();
-  try { localStorage.removeItem(KEY_SKIP_KEY); } catch (e) {}
+  try { localStorage.removeItem(FALLBACK_CONSENT_KEY); } catch (e) {}
   keycard.hidden = true;
   sysnote('已切换到你的模型。');
   ta.focus();
 });
 document.getElementById('kcSkip').addEventListener('click', () => {
-  try { localStorage.setItem(KEY_SKIP_KEY, '1'); } catch (e) {}
+  try { localStorage.setItem(FALLBACK_CONSENT_KEY, '1'); } catch (e) {}
   keycard.hidden = true;
-  sysnote('先用免密钥线路聊着，随时可以在右上角「偏好」里接入更好的模型。');
+  sysnote('已同意使用免费公共 AI 线路；发送的对话会交由第三方服务处理。可在偏好中接入自己的模型。');
   ta.focus();
 });
 
 /* 偏好设置 */
 const modal = document.getElementById('modal');
 document.getElementById('prefsBtn').addEventListener('click', () => {
+  initProviderSelect();
+  const providerIndex = Math.max(0, PROVIDERS.findIndex(provider => provider.base === settings.base));
+  document.getElementById('mProvider').value = String(providerIndex);
   document.getElementById('mBase').value = settings.base || '';
   document.getElementById('mModel').value = settings.model || '';
   document.getElementById('mKey').value = settings.key || '';
   modal.hidden = false;
+  document.getElementById('mKey').focus();
 });
-modal.addEventListener('click', e => { if (e.target === modal) modal.hidden = true; });
-document.getElementById('save').addEventListener('click', () => {
-  settings.base = document.getElementById('mBase').value.trim();
-  settings.model = document.getElementById('mModel').value.trim();
-  settings.key = document.getElementById('mKey').value.trim();
-  saveSettings();
+function closePreferences() {
   modal.hidden = true;
-  if (settings.key) sysnote('已保存。之后的消息会走你配置的接口。');
-  else sysnote('没填 key，会走代理共享线路或免密钥线路。');
+  document.getElementById('prefsBtn').focus();
+}
+modal.addEventListener('click', e => { if (e.target === modal) closePreferences(); });
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !modal.hidden) closePreferences();
+});
+document.getElementById('save').addEventListener('click', () => {
+  const base = document.getElementById('mBase').value.trim();
+  const model = document.getElementById('mModel').value.trim();
+  const key = document.getElementById('mKey').value.trim();
+  if (key && location.protocol === 'file:') { sysnote('请先通过网站或 node server.js 打开 Geist，才能安全连接个人 API。'); return; }
+  if (key && !findProvider(base)) { sysnote('暂不支持这个接口地址，请使用支持的服务地址。'); return; }
+  if (key && !/^[a-zA-Z0-9._:-]{1,100}$/.test(model)) { sysnote('模型名称格式无效。'); return; }
+  settings.base = base;
+  settings.model = model;
+  settings.key = key;
+  saveSettings();
+  closePreferences();
+  if (settings.key) sysnote('已保存到当前浏览器会话；之后的消息会经 Geist 代理发送到你选择的模型。');
+  else sysnote('未填写 key；将尝试项目代理。若要使用免费公共线路，请先明确同意。');
 });
 document.getElementById('reset').addEventListener('click', () => {
   settings = Object.assign({}, DEFAULT_SETTINGS);
   saveSettings();
+  try { localStorage.removeItem(FALLBACK_CONSENT_KEY); } catch (e) {}
+  document.getElementById('mProvider').value = '0';
   document.getElementById('mBase').value = settings.base;
   document.getElementById('mModel').value = settings.model;
   document.getElementById('mKey').value = '';

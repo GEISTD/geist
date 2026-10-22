@@ -4,6 +4,8 @@
    ============================================================ */
 
 module.exports = async function handler(req, res) {
-  const key = String(process.env.GEIST_API_KEY || '').trim();
+  res.setHeader('Cache-Control', 'no-store');
+  if (req.method !== 'GET') { res.status(405).json({ error: 'method_not_allowed' }); return; }
+  const key = process.env.GEIST_ENABLE_SHARED_KEY === 'true' && String(process.env.GEIST_API_KEY || '').trim();
   res.status(200).json({ ok: true, keyConfigured: !!key });
 };

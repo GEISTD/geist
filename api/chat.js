@@ -1,82 +1,156 @@
-/* ============================================================
-   Geist 云端代理（Vercel Serverless 函数）
-   作用：替代本机 server.js 的 /api/chat，跑在 Vercel 云端。
-   - 密钥存放在 Vercel 项目设置 → Environment Variables → GEIST_API_KEY
-     （服务端环境变量，访客和仓库都接触不到）
-   - 与 Geist.html 同源部署，前端打开时会自动探测并启用这条线路
-   - 没有密钥时返回 503，前端会自动退回免密钥线路
-   ============================================================ */
-
+/* Vercel proxy for OpenAI-compatible providers. Never log keys or prompts. */
 const https = require('https');
 
-const UPSTREAM_HOST = 'open.bigmodel.cn';
-const UPSTREAM_PATH = '/api/paas/v4/chat/completions';
+const PROVIDERS = {
+  'https://open.bigmodel.cn/api/paas/v4': { host: 'open.bigmodel.cn', path: '/api/paas/v4/chat/completions', model: 'glm-4-flash' },
+  'https://api.deepseek.com/v1': { host: 'api.deepseek.com', path: '/v1/chat/completions', model: 'deepseek-chat' },
+  'https://api.openai.com/v1': { host: 'api.openai.com', path: '/v1/chat/completions', model: 'gpt-4o-mini' },
+  'https://dashscope.aliyuncs.com/compatible-mode/v1': { host: 'dashscope.aliyuncs.com', path: '/compatible-mode/v1/chat/completions', model: 'qwen-flash' }
+};
+const ORIGINS = new Set([
+  'https://geistd.github.io',
+  'https://geist-pied.vercel.app',
+  'https://geist-0-d6g5tr5x0ec1493bc-1512601249.tcloudbaseapp.com',
+  ...(process.env.GEIST_ALLOWED_ORIGINS || '').split(',').map(x => x.trim()).filter(Boolean)
+]);
+const WINDOW_MS = 60_000;
+const MAX_REQUESTS = 20;
+const MAX_BODY_BYTES = 128 * 1024;
+const rateBuckets = new Map();
 
-function callUpstream(payload, key) {
+function originOf(req) {
+  return String(req.headers.origin || '').replace(/\/$/, '');
+}
+
+function headersFor(origin) {
+  return {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'Vary': 'Origin',
+    ...(ORIGINS.has(origin) ? {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Methods': 'POST,OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age': '600'
+    } : {})
+  };
+}
+
+function send(res, origin, status, payload) {
+  res.writeHead(status, headersFor(origin));
+  res.end(JSON.stringify(payload));
+}
+
+function clientIp(req) {
+  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  return forwarded || String(req.socket && req.socket.remoteAddress || 'unknown');
+}
+
+function rateLimited(ip) {
+  const now = Date.now();
+  if (rateBuckets.size > 1000) {
+    for (const [address, entry] of rateBuckets) if (now - entry.start >= WINDOW_MS) rateBuckets.delete(address);
+  }
+  const bucket = rateBuckets.get(ip);
+  if (!bucket || now - bucket.start >= WINDOW_MS) {
+    rateBuckets.set(ip, { start: now, count: 1 });
+    return false;
+  }
+  bucket.count += 1;
+  return bucket.count > MAX_REQUESTS;
+}
+
+function normalizeMessages(value) {
+  if (!Array.isArray(value) || value.length < 1 || value.length > 25) return null;
+  let total = 0;
+  const messages = [];
+  for (const item of value) {
+    if (!item || !['system', 'user', 'assistant'].includes(item.role) || typeof item.content !== 'string') return null;
+    total += Buffer.byteLength(item.content, 'utf8');
+    if (item.content.length > 12_000 || total > 64 * 1024) return null;
+    messages.push({ role: item.role, content: item.content });
+  }
+  return messages;
+}
+
+function upstreamRequest(provider, payload, key) {
   return new Promise((resolve, reject) => {
     const data = JSON.stringify(payload);
     const req = https.request({
-      hostname: UPSTREAM_HOST,
-      path: UPSTREAM_PATH,
+      hostname: provider.host,
+      path: provider.path,
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json; charset=utf-8',
+        'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(data),
         Authorization: 'Bearer ' + key
       },
-      timeout: 55000
-    }, res => {
+      timeout: 45_000
+    }, response => {
       let body = '';
-      res.on('data', c => { body += c; });
-      res.on('end', () => resolve({ status: res.statusCode, body }));
+      response.on('data', chunk => {
+        body += chunk;
+        if (body.length > 1024 * 1024) req.destroy(new Error('upstream response too large'));
+      });
+      response.on('end', () => resolve({ status: response.statusCode || 502, body }));
     });
     req.on('timeout', () => req.destroy(new Error('upstream timeout')));
     req.on('error', reject);
-    req.write(data);
-    req.end();
+    req.end(data);
   });
 }
 
 module.exports = async function handler(req, res) {
-  if (req.method === 'OPTIONS') { res.status(200).end(); return; }
-  if (req.method !== 'POST') { res.status(405).json({ error: '只支持 POST' }); return; }
-
-  const key = String(process.env.GEIST_API_KEY || '').trim();
-  if (!key) {
-    res.status(503).json({ error: '云端还没有配置 GEIST_API_KEY 环境变量' });
-    return;
+  const origin = originOf(req);
+  const originAllowed = ORIGINS.has(origin);
+  if (req.method === 'OPTIONS') {
+    if (!originAllowed) return send(res, origin, 403, { error: 'origin_not_allowed' });
+    res.writeHead(204, headersFor(origin));
+    return res.end();
   }
+  if (!originAllowed) return send(res, origin, 403, { error: 'origin_not_allowed' });
+  if (req.method !== 'POST') return send(res, origin, 405, { error: 'method_not_allowed' });
+  if (Number(req.headers['content-length'] || 0) > MAX_BODY_BYTES) return send(res, origin, 413, { error: 'request_too_large' });
+  if (rateLimited(clientIp(req))) return send(res, origin, 429, { error: 'rate_limited' });
 
-  let body;
+  let body = req.body;
   try {
-    body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-  } catch (e) {
-    res.status(400).json({ error: '请求体无效' });
-    return;
+    if (typeof body === 'string') body = JSON.parse(body);
+    if (!body || typeof body !== 'object' || Buffer.byteLength(JSON.stringify(body), 'utf8') > MAX_BODY_BYTES) throw new Error();
+  } catch (_) {
+    return send(res, origin, 400, { error: 'invalid_request' });
   }
 
-  const messages = Array.isArray(body && body.messages) ? body.messages.slice(0, 50) : null;
-  if (!messages || !messages.length) {
-    res.status(400).json({ error: '缺少 messages' });
-    return;
-  }
+  const userKey = typeof body.apiKey === 'string' ? body.apiKey.trim() : '';
+  const sharedKeyEnabled = process.env.GEIST_ENABLE_SHARED_KEY === 'true';
+  const key = userKey || (sharedKeyEnabled ? String(process.env.GEIST_API_KEY || '').trim() : '');
+  if (!key || key.length > 512) return send(res, origin, 503, { error: 'model_not_configured' });
 
-  const payload = {
-    model: typeof body.model === 'string' && body.model ? body.model : 'glm-4-flash',
-    messages,
-    temperature: typeof body.temperature === 'number' ? body.temperature : 0.85,
-    max_tokens: 700
-  };
+  const provider = userKey
+    ? PROVIDERS[String(body.base || '').replace(/\/+$/, '')]
+    : PROVIDERS['https://open.bigmodel.cn/api/paas/v4'];
+  if (!provider) return send(res, origin, 400, { error: 'unsupported_provider' });
+
+  const messages = normalizeMessages(body.messages);
+  if (!messages) return send(res, origin, 400, { error: 'invalid_messages' });
+  const model = userKey ? String(body.model || provider.model) : String(process.env.GEIST_MODEL || provider.model);
+  if (!/^[a-zA-Z0-9._:-]{1,100}$/.test(model)) return send(res, origin, 400, { error: 'invalid_model' });
 
   try {
-    const up = await callUpstream(payload, key);
-    if (up.status === 200) {
-      res.setHeader('Content-Type', 'application/json; charset=utf-8');
-      res.status(200).send(up.body);
-    } else {
-      res.status(502).json({ error: 'upstream ' + up.status + ': ' + up.body.slice(0, 200) });
+    const result = await upstreamRequest(provider, {
+      model,
+      messages,
+      temperature: 0.85,
+      max_tokens: 700
+    }, key);
+    if (result.status !== 200) {
+      console.warn('[geist] upstream returned status', result.status);
+      return send(res, origin, 502, { error: 'upstream_unavailable' });
     }
-  } catch (e) {
-    res.status(502).json({ error: '无法连接智谱：' + e.message });
+    res.writeHead(200, headersFor(origin));
+    return res.end(result.body);
+  } catch (error) {
+    console.warn('[geist] upstream request failed:', error && error.message || 'unknown error');
+    return send(res, origin, 502, { error: 'upstream_unavailable' });
   }
 };
